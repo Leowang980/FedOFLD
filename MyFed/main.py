@@ -19,7 +19,7 @@ if __name__=='__main__':
     
     args=args_parser()
     args.device=torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
-    args.path_checkpoint="checkpoint/"+args.method+'_'+args.model+".pth.tar"
+    args.path_checkpoint="checkpoint/"+args.method+'_'+args.model+'_'+args.alpha+".pth.tar"
     print(args.path_checkpoint)
     dataloader_train_dict, dataloader_test_dict, train_len_dict, test_len_dict=cifar10_noiid(args=args,root='../../data/cifar10')
     dataloader_distill=cifar100_distill(args=args,root='../../data/cifar100')
@@ -71,8 +71,8 @@ if __name__=='__main__':
     msg['From']=formataddr(['个人电脑',from_addr])
     msg['To']=formataddr(['Leowang980',to_addr])
     msg['Subject']='模型训练完成，结果见附件'
-    pth='result/result_'+args.method+'_'+args.model+'.csv'
-    filename='result_'+args.method+'_'+args.model+'.csv'
+    pth='result/result_'+args.method+'_'+args.model+'_'+args.alpha+'.csv'
+    filename='result_'+args.method+'_'+args.model+'_'+args.alpha+'.csv'
     with open(pth, 'rb') as f:
         base=MIMEBase('结果','pdf')
         base.set_payload(f.read())

@@ -4,7 +4,7 @@ def args_parser():
     
     #global parameters
     parser.add_argument('--gpu', type=int, default=0, help="GPU ID, -1 for CPU")
-    parser.add_argument('--communication_round', type=int, default=100)
+    parser.add_argument('--communication_round', type=int, default=200)
     parser.add_argument('--all_client', type=int, default=20)
     parser.add_argument('--each_client', type=int, default=10)
     parser.add_argument('--alpha', type=float, default=0.5, help='smaller, more non-iid')
@@ -21,7 +21,7 @@ def args_parser():
     parser.add_argument('--local_batch_size', type=int, default=64)
 
     #distill parameters
-    parser.add_argument('--warmup_round', type=int, default=20, help='must be smaller than communication_round')
+    parser.add_argument('--warmup_round', type=int, default=10, help='must be smaller than communication_round')
     parser.add_argument('--distill_epoch', type=int, default=10)
     parser.add_argument('--distill_batch_size', type=int, default=32)
     parser.add_argument('--temperature', type=float, default=10.0)
