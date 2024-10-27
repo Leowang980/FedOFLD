@@ -92,12 +92,15 @@ def homo_feature_distillaton(args, global_model, total_num,
 def hetero_feature_distillation(args, global_model, model_rate, total_num, 
                                         client_list, local_weight, global_weight, 
                                         selected_client, train_len_dict, dataloader_distill):
+    
     optimizer=make_distill_optimizer(args, global_model)
     criterion=torch.nn.KLDivLoss(reduction='batchmean')
+
     scheduler=make_distill_scheduler(args, optimizer)
     for idx in range(args.distill_epoch):
         total_loss=0.0
         for batch_idx, (images, labels) in enumerate(dataloader_distill):
+            #start_time=time.time()
             T=args.temperature
             optimizer.zero_grad()
             images=images.to(args.device)
@@ -111,6 +114,23 @@ def hetero_feature_distillation(args, global_model, model_rate, total_num,
             global_feature_dict[args.model_level[0]]=torch.nn.functional.log_softmax(global_feature/T, dim=1)
             '''for k, v in global_feature_dict.items():
                 print(v.shape)'''
+            '''projector=dict()
+            projector[args.model_level[0]]=torch.nn.Identity()
+            for i in range(1, len(args.model_level)):
+                if args.method == 'FedLFD_hetero':
+                    projector_name=f'linear_projector{i}' 
+                elif args.method == 'FedOFD_hetero':
+                    projector_name=f'orthogonal_projector{i}'
+                projector[args.model_level[i]]=getattr(global_model, projector_name)
+
+            _, fir_feature=client_list[selected_client[0]].get_prob(images, local_weight[0])
+            fir_feature=torch.nn.functional.softmax(fir_feature/T, dim=1)
+            loss=(T**2) * criterion(global_feature, projector[client_list[selected_client[0]].model_rate](fir_feature))
+
+            for i in range(1, len(selected_client)):
+                _, cur_feature=client_list[selected_client[i]].get_prob(images, local_weight[i])
+                cur_feature=torch.nn.functional.softmax(cur_feature/T, dim=1)
+                loss=loss+ (T**2) * criterion(global_feature, projector[client_list[selected_client[i]].model_rate](cur_feature))'''
 
             for i in range(1, len(args.model_level)):
                 if args.method == 'FedLFD_hetero':
@@ -133,7 +153,11 @@ def hetero_feature_distillation(args, global_model, model_rate, total_num,
                 loss=loss+ (T**2) * criterion(global_feature_dict[client_list[selected_client[i]].model_rate], cur_feature)
             
             total_loss+=loss.item()
+            '''time1=time.time()-start_time'''
+            
             loss.backward()
+            '''time2=time.time()-start_time
+            print('time1:', time1, 'time2:', time2)'''
             optimizer.step()
         if args.distill_scheduler == 'ReduceLROnPlateau':
             scheduler.step(total_loss)
@@ -151,6 +175,7 @@ def hetero_orthogonal_feature_logit_distillation(args, global_model, model_rate,
     for idx in range(args.distill_epoch):
         total_loss=0.0
         for batch_idx, (images, labels) in enumerate(dataloader_distill):
+            #start_time=time.time()
             T=args.temperature
             optimizer.zero_grad()
             images=images.to(args.device)
@@ -165,7 +190,10 @@ def hetero_orthogonal_feature_logit_distillation(args, global_model, model_rate,
             global_feature_dict[args.model_level[0]]=torch.nn.functional.log_softmax(global_feature/T, dim=1)
 
             for i in range(1, len(args.model_level)):
-                projector_name=f'orthogonal_projector{i}'
+                if args.method == 'FedOFLD_hetero':
+                    projector_name=f'orthogonal_projector{i}'
+                elif args.method == 'FedLFLD_hetero':
+                    projector_name=f'linear_projector{i}'
                 projector=getattr(global_model, projector_name)
                 new_feature=projector(global_feature)
                 new_feature=torch.nn.functional.log_softmax(new_feature/T, dim=1)
@@ -184,10 +212,12 @@ def hetero_orthogonal_feature_logit_distillation(args, global_model, model_rate,
                 logit_loss=logit_loss+(T**2) * criterion(global_prob, cur_prob)
                 feature_loss=feature_loss+(T**2) * criterion(global_feature_dict[client_list[selected_client[i]].model_rate], cur_feature)
 
-            loss=logit_loss*args.gamma+feature_loss*args.beta
-            
+            loss=logit_loss+feature_loss
+            #time1=time.time()-start_time
             total_loss+=loss.item()
             loss.backward()
+            #time2=time.time()-start_time
+            #print('time1:', time1, 'time2:', time2)
             optimizer.step()
         if args.distill_scheduler == 'ReduceLROnPlateau':
             scheduler.step(total_loss)

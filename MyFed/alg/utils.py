@@ -32,7 +32,7 @@ def setup_hetero_client(args, dataloader_train_dict, dataloader_test_dict, model
 
 def write_result(args, round_idx, start, all_loss, all_acc, all_time):
 
-    file_name='result/result_'+args.method+'_'+args.model+'_'+args.alpha+'.csv'
+    file_name='result/result_'+args.method+'_'+args.model+'_'+str(args.alpha)+'.csv'
     with open(file_name, mode='w', newline='') as file:
                 writer=csv.writer(file)
                 writer.writerow(['communication_round', 'Loss', 'Accuracy', 'Time'])

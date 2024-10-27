@@ -149,6 +149,8 @@ def combine(args, global_param, local_param, param_idx, user_idx):
     output_bias_name=[k for k in local_param[0].keys() if 'bias' in k][-1]
 
     for k, v in global_param.items():
+        if 'projector' in k:
+            continue
         count[k]=v.new_zeros(v.size(), dtype=torch.float32)
         tmp_v=v.new_zeros(v.size(), dtype=torch.float32)
 

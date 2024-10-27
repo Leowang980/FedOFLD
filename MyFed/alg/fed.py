@@ -254,15 +254,15 @@ class Fed_Distill_hetero(object):
             
             avg_weight=combine(self.args, global_weight, local_param, param_idx, selected_client)
             self.global_model.load_state_dict(global_weight)
-
+            print('预热时间', time.time()-start_time)
             if round_idx >= self.args.warmup_round:
                 if m==1:
                     print('开始蒸馏')
                     m-=1
-                if self.args.method in ['FedLFD_homo', 'FedOFD_homo']:
+                if self.args.method in ['FedLFD_hetero', 'FedOFD_hetero']:
                     avg_weight=hetero_feature_distillation(self.args, self.global_model, self.model_rate, total_num, self.client_list, local_param,
                                                         avg_weight, selected_client, self.train_len_dict, self.dataloader_distill)
-                elif self.args.method == 'FedOFLD_hetero':
+                elif self.args.method in ['FedOFLD_hetero', 'FedLFLD_hetero']:
                     avg_weight=avg_weight=hetero_orthogonal_feature_logit_distillation(self.args, self.global_model, self.model_rate, 
                                                                                     total_num, self.client_list, local_param,
                                                                                     avg_weight, selected_client, self.train_len_dict, self.dataloader_distill)
@@ -272,11 +272,12 @@ class Fed_Distill_hetero(object):
                 elif self.args.method == 'HeteroHetero':
                     avg_weight=hetero_hetero_feature_distillation(self.args, self.global_model, self.model_rate, total_num, self.client_list, local_param, 
                                                                 avg_weight, selected_client, self.train_len_dict, self.dataloader_distill)
-                
+            print('蒸馏时间', time.time()-start_time)
             self.global_model.load_state_dict(avg_weight)
             acc= global_test(self.args, self.global_model, self.dataloader_test_global)
             end_time=time.time()
             longing_time=end_time-start_time
+            print('所有时间', longing_time)
             all_acc.append(acc)
             all_loss.append(avg_loss)
             all_time.append(longing_time)
