@@ -29,7 +29,7 @@ class Local(object):
             for batch_idx, (images, labels) in enumerate(self.dataloader_train):
 
                 images, labels= images.to(self.args.device), labels.to(self.args.device)
-                self.model.zero_grad()
+                optimizer.zero_grad()
                 
                 output=self.model(images)
                 loss= loss_func(output, labels)

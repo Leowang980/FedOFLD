@@ -3,6 +3,7 @@ import time
 from torch import nn
 import torch.nn.functional as F
 import numpy as np
+import random
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -16,10 +17,14 @@ from nets.cnn import CNNCifar
 from alg.fed import FedAvg, HeteroFL, Fed_Distill_hetero, Fed_Distill_homo
 from alg.non_fed import Non_Fed
 if __name__=='__main__':
+
     np.random.seed(0)
+    random.seed(0)
     torch.manual_seed(0)
     torch.cuda.manual_seed_all(0)
     torch.backends.cudnn.deterministic = True
+    #torch.backends.cudnn.benchmark = False
+    
     args=args_parser()
     args.device=torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     args.path_checkpoint="checkpoint/"+args.method+'_'+args.model+'_'+str(args.alpha)+".pth.tar"
@@ -40,14 +45,18 @@ if __name__=='__main__':
     else:
         exit('Error: unrecognized model')
 
+
     #print(model)
+    p=0
     if args.method == 'test':
+
         for k, v in model.state_dict().items():
-            print(k, v.size())
-        for k, v in model1.state_dict().items():
-            print(k, v.size())
+            print(k, v)
+            break
+        '''for k, v in model1.state_dict().items():
+            print(k, v)
         for k, v in model2.state_dict().items():
-            print(k, v.size())
+            print(k, v)'''
         exit()
     if args.method == 'FedAvg':
         fed=FedAvg(args, model, dataloader_train_dict, dataloader_test_dict, 
