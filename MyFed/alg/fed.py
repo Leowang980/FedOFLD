@@ -7,10 +7,11 @@ import csv
 import torch.utils
 from alg.client import Client, HeteroClient
 from alg.distill import ensemble_distillation, homo_feature_distillaton, hetero_feature_distillation
-from alg.distill import hetero_orthogonal_feature_logit_distillation, hetero_hetero_feature_distillation
+from alg.distill import hetero_orthogonal_feature_logit_distillation, hetero_hetero_feature_distillation, hetero_hetero_feature_logit_distillation
 from alg.utils import write_result, global_test, Avg, setup_client, setup_hetero_client
-from alg.utils import make_checkpoint, make_distill_optimizer, make_distill_scheduler
+from alg.utils import make_checkpoint, make_distill_optimizer, make_distill_scheduler, make_connectors
 from alg.hetero import make_model_rate, distribute, combine
+from alg.overhaul import overhaul_feature_distillation, overhaul_feature_logit_distillation
 from collections import OrderedDict
 
 class FedAvg(object):
@@ -217,6 +218,7 @@ class Fed_Distill_hetero(object):
         self.global_model=global_model
         self.dataloader_distill=dataloader_distill
         self.model_rate=make_model_rate(args)
+        self.connectors=make_connectors(self.model_rate)
         self.client_list=setup_hetero_client(self.args, self.dataloader_train_dict, self.dataloader_test_dict, self.model_rate)
     
     def train(self):
@@ -228,7 +230,7 @@ class Fed_Distill_hetero(object):
         start_round=0
         if self.args.resume:
             check_point=torch.load(self.args.path_checkpoint)
-            self.model.load_state_dict(check_point['model'])
+            self.global_model.load_state_dict(check_point['model'])
             start_round=check_point['communication_round']
         
         if self.args.communication_round <= self.args.warmup_round:
@@ -260,7 +262,13 @@ class Fed_Distill_hetero(object):
                 if m==1:
                     print('开始蒸馏')
                     m-=1
-                if self.args.method in ['FedLFD_hetero', 'FedOFD_hetero']:
+                if self.args.method == 'Overhaul':
+                    avg_weight=overhaul_feature_distillation(self.args, self.global_model, self.model_rate, total_num, self.client_list, local_param,
+                                                    avg_weight, selected_client, self.train_len_dict, self.dataloader_distill, self.connectors)
+                elif self.args.method == 'OverhaulDF':
+                    avg_weight=overhaul_feature_distillation(self.args, self.global_model, self.model_rate, total_num, self.client_list, local_param,
+                                                    avg_weight, selected_client, self.train_len_dict, self.dataloader_distill, self.connectors)
+                elif self.args.method in ['FedLFD_hetero', 'FedOFD_hetero']:
                     avg_weight=hetero_feature_distillation(self.args, self.global_model, self.model_rate, total_num, self.client_list, local_param,
                                                         avg_weight, selected_client, self.train_len_dict, self.dataloader_distill)
                 elif self.args.method in ['FedOFLD_hetero', 'FedLFLD_hetero']:
@@ -272,6 +280,9 @@ class Fed_Distill_hetero(object):
                                                     selected_client, self.train_len_dict, self.dataloader_distill)
                 elif self.args.method == 'HeteroHetero':
                     avg_weight=hetero_hetero_feature_distillation(self.args, self.global_model, self.model_rate, total_num, self.client_list, local_param, 
+                                                                avg_weight, selected_client, self.train_len_dict, self.dataloader_distill)
+                elif self.args.method == 'HeteroHeteroDF':
+                    avg_weight=hetero_hetero_feature_logit_distillation(self.args, self.global_model, self.model_rate, total_num, self.client_list, local_param, 
                                                                 avg_weight, selected_client, self.train_len_dict, self.dataloader_distill)
             #print('蒸馏时间', time.time()-start_time)
             self.global_model.load_state_dict(avg_weight)

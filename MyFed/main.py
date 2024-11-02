@@ -29,9 +29,9 @@ if __name__=='__main__':
     args.device=torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     args.path_checkpoint="checkpoint/"+args.method+'_'+args.model+'_'+str(args.alpha)+".pth.tar"
     print(args.path_checkpoint)
-    dataloader_train_dict, dataloader_test_dict, train_len_dict, test_len_dict=cifar10_noiid(args=args,root='../../data/cifar10')
-    dataloader_distill=cifar100_distill(args=args,root='../../data/cifar100')
-    dataloader_train_global, dataloader_test_global=cifar10_global(args=args, root='../../data/cifar10')
+    dataloader_train_dict, dataloader_test_dict, train_len_dict, test_len_dict=cifar10_noiid(args=args,root='/home/ycli/Dataset/CIFAR10')
+    dataloader_distill=cifar100_distill(args=args,root='/home/ycli/Dataset/CIFAR100')
+    dataloader_train_global, dataloader_test_global=cifar10_global(args=args, root='/home/ycli/Dataset/CIFAR10')
 
     
     if 'resnet' in args.model:
@@ -67,7 +67,9 @@ if __name__=='__main__':
     elif args.method == 'HeteroFL':
         fed=HeteroFL(args, model, dataloader_train_dict, dataloader_test_dict, 
                     dataloader_test_global, train_len_dict, test_len_dict) 
-    elif args.method in ['FedLFD_hetero', 'FedOFD_hetero', 'FedLFLD_hetero', 'FedOFLD_hetero', 'FedDF_hetero', 'HeteroHetero']:
+    elif args.method in ['FedLFD_hetero', 'FedOFD_hetero', 'FedLFLD_hetero', 
+                        'FedOFLD_hetero', 'FedDF_hetero', 'HeteroHetero', 'HeteroHeteroDF',
+                        'Overhaul', 'OverhaulDF']:
         fed=Fed_Distill_hetero(args, model, dataloader_train_dict, dataloader_test_dict, 
                         dataloader_test_global, train_len_dict, test_len_dict, dataloader_distill)
     elif args.method == "Non_Fed":

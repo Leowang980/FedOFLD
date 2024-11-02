@@ -63,3 +63,9 @@ class HeteroClient(object):
             feature=cur_feature.view(b, c, h*w).mean(-1)
             prob=self.model.forward_head(cur_feature)
         return prob, feature
+    
+    def extract_feature(self, images, global_weight):
+        self.model.load_state_dict(global_weight)
+        self.model.train()
+        feature, prob=self.model.extract_feature(images)
+        return feature, prob

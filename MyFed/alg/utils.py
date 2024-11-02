@@ -1,6 +1,10 @@
 import csv
 import torch
 import copy
+import torch
+import torch.nn as nn
+import math
+import numpy as np
 from alg.client import Client, HeteroClient
 
 def Avg(local_weight, train_len_dict, total_num, selected_client):
@@ -91,3 +95,26 @@ def make_distill_scheduler(args, optimizer):
                                                                 patience=5, 
                                                                 verbose=True)
     return scheduler
+    
+def build_feature_connector(local_channel, global_channel):
+    C = [nn.Conv2d(local_channel, global_channel, kernel_size=1, stride=1, padding=0, bias=False),
+        nn.BatchNorm2d(global_channel)]
+
+    for m in C:
+        if isinstance(m, nn.Conv2d):
+            n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            m.weight.data.normal_(0, math.sqrt(2. / n))
+        elif isinstance(m, nn.BatchNorm2d):
+            m.weight.data.fill_(1)
+            m.bias.data.zero_()
+
+    return nn.Sequential(*C)
+
+def make_connectors(model_rate):
+    pre_hidden_size=[64, 128, 256, 512]
+    connectors=list
+    for i in range(model_rate):
+        connectors[i]=build_feature_connector(
+            [int(np.ceil(model_rate[i]*pre_hidden_size[j])) for j in pre_hidden_size], pre_hidden_size)
+    return connectors
+

@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 class Local(object):
     def __init__(self, args, dataloader_train, dataloader_test, model):

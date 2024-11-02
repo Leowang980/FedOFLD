@@ -85,6 +85,18 @@ class ResNet(nn.Module):
             self.in_planes = planes
         return nn.Sequential(*layers)
     
+    def extract_feature(self, x):
+        x=self.conv1(x)
+        feat1=self.layer1(x)
+        feat2=self.layer2(feat1)
+        feat3=self.layer3(feat2)
+        feat4=self.layer4(feat3)
+        out=self.output(feat4)
+        feat1=self.layer2[0].norm1(feat1)
+        feat2=self.layer3[0].norm1(feat2)
+        feat3=self.layer4[0].norm1(feat3)
+        return [feat1, feat2, feat3, feat4], out
+    
     def forward_feature(self, x):
         out=self.conv1(x)
         out=self.layer1(out)
@@ -92,6 +104,7 @@ class ResNet(nn.Module):
         out=self.layer3(out)
         out=self.layer4(out)
         #print(out.shape)
+
         return out
     
     def forward_head(self, x):
